@@ -1,4 +1,4 @@
-module faker
+module github.com/evertonmsantos/faker
 
 go 1.23.4
 
