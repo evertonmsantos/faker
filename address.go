@@ -3,13 +3,15 @@ package faker
 import (
 	"database/sql"
 	"embed"
+	"faker/models"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"sync"
-	
-	"github.com/evertonmsantos/faker/models"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -17,21 +19,22 @@ import (
 var cepsDB embed.FS
 
 var (
-	db   *sql.DB
-	once sync.Once
+	db       *sql.DB
+	once     sync.Once
+	tempPath string
 )
 
 // GetDB mantém uma única conexão ativa (singleton)
 func GetDB() *sql.DB {
 	once.Do(func() {
 		var err error
-		dbPath, err := extractDB()
+		tempPath, err = extractDB()
 		if err != nil {
 			fmt.Printf("Erro ao extrair o banco de dados: %v\n", err)
 			return
 		}
 
-		db, err = sql.Open("sqlite", dbPath)
+		db, err = sql.Open("sqlite", tempPath)
 		if err != nil {
 			fmt.Printf("Erro ao conectar ao banco: %v\n", err)
 			return
@@ -44,25 +47,28 @@ func GetDB() *sql.DB {
 	return db
 }
 
-// extractDB cria um arquivo temporário e copia os dados do embed
+// extractDB reutiliza o mesmo arquivo no %temp% e não cria novos
 func extractDB() (string, error) {
-	tempFile, err := ioutil.TempFile("", "ceps-*.db")
-	if err != nil {
-		return "", err
-	}
-	defer tempFile.Close()
+	tempDir := os.TempDir()
+	dbFilePath := filepath.Join(tempDir, "faker_ceps.db")
 
+	// Se o arquivo já existe, usamos ele sem recriar
+	if _, err := os.Stat(dbFilePath); err == nil {
+		return dbFilePath, nil
+	}
+
+	// Criar novo arquivo e escrever o conteúdo do banco de dados embed
 	data, err := fs.ReadFile(cepsDB, "data/ceps.db")
 	if err != nil {
 		return "", err
 	}
 
-	_, err = tempFile.Write(data)
+	err = ioutil.WriteFile(dbFilePath, data, 0644)
 	if err != nil {
 		return "", err
 	}
 
-	return tempFile.Name(), nil
+	return dbFilePath, nil
 }
 
 // CloseDB fecha a conexão com o banco de dados
