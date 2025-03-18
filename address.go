@@ -2,14 +2,19 @@ package faker
 
 import (
 	"database/sql"
+	"embed"
 	"fmt"
+	"io/fs"
+	"io/ioutil"
 	"math/rand"
 	"sync"
-
+	
 	"github.com/evertonmsantos/faker/models"
-
 	_ "modernc.org/sqlite"
 )
+
+//go:embed data/ceps.db
+var cepsDB embed.FS
 
 var (
 	db   *sql.DB
@@ -20,7 +25,13 @@ var (
 func GetDB() *sql.DB {
 	once.Do(func() {
 		var err error
-		db, err = sql.Open("sqlite", "./data/ceps.db")
+		dbPath, err := extractDB()
+		if err != nil {
+			fmt.Printf("Erro ao extrair o banco de dados: %v\n", err)
+			return
+		}
+
+		db, err = sql.Open("sqlite", dbPath)
 		if err != nil {
 			fmt.Printf("Erro ao conectar ao banco: %v\n", err)
 			return
@@ -31,6 +42,27 @@ func GetDB() *sql.DB {
 		}
 	})
 	return db
+}
+
+// extractDB cria um arquivo temporário e copia os dados do embed
+func extractDB() (string, error) {
+	tempFile, err := ioutil.TempFile("", "ceps-*.db")
+	if err != nil {
+		return "", err
+	}
+	defer tempFile.Close()
+
+	data, err := fs.ReadFile(cepsDB, "data/ceps.db")
+	if err != nil {
+		return "", err
+	}
+
+	_, err = tempFile.Write(data)
+	if err != nil {
+		return "", err
+	}
+
+	return tempFile.Name(), nil
 }
 
 // CloseDB fecha a conexão com o banco de dados
