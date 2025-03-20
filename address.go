@@ -79,7 +79,7 @@ func CloseDB() {
 }
 
 // Endereco retorna um CEP aleatório do banco sem usar OFFSET
-func Endereco() (*models.Address, error) {
+func Address() (*models.Address, error) {
 	database := GetDB()
 	if database == nil {
 		return nil, fmt.Errorf("banco de dados não inicializado")
