@@ -110,7 +110,7 @@ func main() {
 	fmt.Println(faker.Phone(true))
 	fmt.Println(faker.Cpf(true))
 	fmt.Println(faker.Cnpj(true))
-	fmt.Println(faker.Endereco())
+	fmt.Println(faker.Address())
 }
 ```
 
