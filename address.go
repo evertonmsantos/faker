@@ -3,7 +3,6 @@ package faker
 import (
 	"database/sql"
 	"embed"
-	"faker/models"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/evertonmsantos/faker/models"
 
 	_ "modernc.org/sqlite"
 )
